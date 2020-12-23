@@ -1,15 +1,17 @@
 package com.bigid.stringfinder.dto;
 
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Value;
 
-import java.util.List;
 
-@Data
-@AllArgsConstructor
+@Value
 public class Record {
 
-    private final String word;
-    private final List<Pointer> pointers;
+    long lineOffset;
+    long charOffset;
+
+    @Override
+    public String toString() {
+        return "lineOffset=" + lineOffset + ", charOffset=" + charOffset;
+    }
 }

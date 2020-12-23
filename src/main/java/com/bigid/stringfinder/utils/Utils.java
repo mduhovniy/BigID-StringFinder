@@ -8,7 +8,7 @@ import java.net.URL;
 import java.net.URLConnection;
 
 @Log4j2
-public class IOUtils {
+public class Utils {
 
     public static void validateURL(String urlString) throws IOException {
         try {
