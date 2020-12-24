@@ -8,4 +8,6 @@ import java.util.Map;
 public interface Aggregator {
 
     Map<String, List<Record>> aggregateResults(List<Map<String, List<Record>>> resultsForAggregation);
+    Map<String, List<Record>> aggregateResultsWithStream(List<Map<String, List<Record>>> resultsForAggregation);
+    Map<String, List<Record>> aggregateResultsWithParallelStream(List<Map<String, List<Record>>> resultsForAggregation);
 }

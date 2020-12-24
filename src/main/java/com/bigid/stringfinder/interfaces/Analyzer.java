@@ -10,4 +10,6 @@ import java.util.Map;
 public interface Analyzer {
 
     Map<String, List<Record>> getRecordCountsFromUrl(URL url) throws IOException;
+    Map<String, List<Record>> getRecordCountsFromUrlStreamAggregation(URL url) throws IOException;
+    Map<String, List<Record>> getRecordCountsFromUrlParallelStreamAggregation(URL url) throws IOException;
 }

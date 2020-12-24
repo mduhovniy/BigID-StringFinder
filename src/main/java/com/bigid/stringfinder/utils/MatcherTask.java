@@ -13,8 +13,6 @@ public class MatcherTask implements Callable<Map<String, List<Record>>> {
     private final int batchNum;
     private final Set<String> names;
 
-    private final Map<String, List<Record>> records = new HashMap<>();
-
     public MatcherTask(String batchString, int batchNum, Set<String> names) {
         lines = batchString.split("\\r?\\n");
         this.batchNum = batchNum;
@@ -22,7 +20,9 @@ public class MatcherTask implements Callable<Map<String, List<Record>>> {
     }
 
     @Override
-    public Map<String, List<Record>> call() throws Exception {
+    public Map<String, List<Record>> call() {
+
+        final Map<String, List<Record>> records = new HashMap<>();
 
         for(int rowInBatch = 0; rowInBatch < lines.length; rowInBatch++) {
             String line = lines[rowInBatch];

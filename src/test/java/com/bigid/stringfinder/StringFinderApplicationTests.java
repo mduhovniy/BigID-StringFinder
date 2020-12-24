@@ -14,16 +14,21 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest
 class StringFinderApplicationTests {
 
+    private static final String TEST_URL = "http://norvig.com/big.txt";
+
     @Autowired
     Analyzer analyzer;
 
     @Test
-    void contextLoads() {
+    void loadFromSiteAndAggregateOnNestedForLoops() throws IOException {
+        assertThat(analyzer.getRecordCountsFromUrl(new URL(TEST_URL))).isNotNull();
     }
-
     @Test
-    void loadFromSite() throws IOException {
-        String url = "http://norvig.com/big.txt";
-        assertThat(analyzer.getRecordCountsFromUrl(new URL(url))).isNotNull();
+    void loadFromSiteAndAggregateOnSingleStream() throws IOException {
+        assertThat(analyzer.getRecordCountsFromUrlStreamAggregation(new URL(TEST_URL))).isNotNull();
+    }
+    @Test
+    void loadFromSiteAndAggregateOnParallelStream() throws IOException {
+        assertThat(analyzer.getRecordCountsFromUrlParallelStreamAggregation(new URL(TEST_URL))).isNotNull();
     }
 }

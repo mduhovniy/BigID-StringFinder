@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Log4j2
 @Service
@@ -16,6 +17,7 @@ public class InMemoryAggregator implements Aggregator {
 
     @Override
     public Map<String, List<Record>> aggregateResults(List<Map<String, List<Record>>> resultsForAggregation) {
+
         Map<String, List<Record>> aggregatedRecords = new HashMap<>();
 
         for(Map<String, List<Record>> res : resultsForAggregation) {
@@ -24,14 +26,37 @@ public class InMemoryAggregator implements Aggregator {
                 aggregatedRecords.get(entry.getKey()).addAll(entry.getValue());
             }
         }
-        printResults(aggregatedRecords);
+
         return aggregatedRecords;
     }
 
-    private void printResults(Map<String, List<Record>> aggregatedRecords) {
+    @Override
+    public Map<String, List<Record>> aggregateResultsWithStream(List<Map<String, List<Record>>> resultsForAggregation) {
 
-        for(Map.Entry<String, List<Record>> entry : aggregatedRecords.entrySet()) {
-            log.info("{} --> [{}]", entry.getKey(), entry.getValue());
-        }
+        return resultsForAggregation.stream()
+                .flatMap(m -> m.entrySet().stream())
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,
+                        (firstSet, secondSet) -> {
+                            List<Record> result = new ArrayList<>();
+                            result.addAll(firstSet);
+                            result.addAll(secondSet);
+                            return result;
+                        }
+                ));
+    }
+
+    @Override
+    public Map<String, List<Record>> aggregateResultsWithParallelStream(List<Map<String, List<Record>>> resultsForAggregation) {
+
+        return resultsForAggregation.parallelStream()
+                .flatMap(m -> m.entrySet().stream())
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,
+                        (firstSet, secondSet) -> {
+                            List<Record> result = new ArrayList<>();
+                            result.addAll(firstSet);
+                            result.addAll(secondSet);
+                            return result;
+                        }
+                ));
     }
 }

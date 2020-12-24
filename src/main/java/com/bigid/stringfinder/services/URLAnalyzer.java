@@ -10,8 +10,11 @@ import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.PreDestroy;
 import java.io.*;
 import java.net.URL;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.*;
 
@@ -39,13 +42,60 @@ public class URLAnalyzer implements Analyzer {
     @SneakyThrows
     public Map<String, List<Record>> getRecordCountsFromUrl(URL url) {
 
+        var resultsForAggregation = getResultsForAggregation(url);
+        Duration duration;
+        Instant start = Instant.now();
+        Map<String, List<Record>> records = aggregator.aggregateResults(resultsForAggregation);
+        duration = Duration.between(start, Instant.now());
+        log.info("Aggregation on Nested For loops finished in {} nanos", duration.getNano());
+
+        printResults(records);
+
+        return records;
+    }
+
+    @Override
+    @SneakyThrows
+    public Map<String, List<Record>> getRecordCountsFromUrlStreamAggregation(URL url) {
+
+        var resultsForAggregation = getResultsForAggregation(url);
+        Duration duration;
+        Instant start = Instant.now();
+        Map<String, List<Record>> records = aggregator.aggregateResultsWithStream(resultsForAggregation);
+        duration = Duration.between(start, Instant.now());
+        log.info("Aggregation on Single Stream finished in {} nanos", duration.getNano());
+
+        printResults(records);
+
+        return records;
+    }
+
+    @Override
+    @SneakyThrows
+    public Map<String, List<Record>> getRecordCountsFromUrlParallelStreamAggregation(URL url) {
+
+        var resultsForAggregation = getResultsForAggregation(url);
+        Duration duration;
+        Instant start = Instant.now();
+        Map<String, List<Record>> records = aggregator.aggregateResultsWithParallelStream(resultsForAggregation);
+        duration = Duration.between(start, Instant.now());
+        log.info("Aggregation on Parallel Stream finished in {} nanos", duration.getNano());
+
+        printResults(records);
+
+        return records;
+    }
+
+    private List<Map<String, List<Record>>> getResultsForAggregation(URL url) throws InterruptedException, ExecutionException, TimeoutException, IOException {
         List<Map<String, List<Record>>> resultsForAggregation = new ArrayList<>();
+        Instant start = Instant.now();
+        Duration duration;
 
         try (InputStream in = url.openStream();
              BufferedReader reader = new BufferedReader(new InputStreamReader(in)))
         {
             final List<Future<Map<String, List<Record>>>> taskList = new ArrayList<>();
-            String line = "";
+            var line = "";
             int batchNum = 0;
 
             while(line != null) {
@@ -61,17 +111,35 @@ public class URLAnalyzer implements Analyzer {
                 taskList.add(executor.submit(new MatcherTask(stringBuilder.toString(), batchNum++, config.names)));
             }
 
+            duration = Duration.between(start, Instant.now());
+            log.info("File fetched from URL {} and submitted for matching in {} batches in {} nanos",
+                    url.toString(), batchNum, duration.getNano());
+
+            start = Instant.now();
+
             for(Future<Map<String, List<Record>>> future : taskList) {
-                Map<String, List<Record>> batchResult = future.get(MATCHER_TIMEOUT_IN_SECONDS, TimeUnit.SECONDS);
-                resultsForAggregation.add(batchResult);
+                resultsForAggregation.add(future.get(MATCHER_TIMEOUT_IN_SECONDS, TimeUnit.SECONDS));
             }
+
+            duration = Duration.between(start, Instant.now());
+            log.info("All matchers finished in {} nanos", duration.getNano());
+
+
         } catch (IOException e) {
             log.error(e);
             throw e;
-        } finally {
-            executor.shutdown();
         }
+        return resultsForAggregation;
+    }
 
-        return aggregator.aggregateResults(resultsForAggregation);
+    private void printResults(Map<String, List<Record>> records) {
+
+        records.forEach((key, value) -> log.info("{} --> [{}]", key, value));
+        log.info("Aggregation finished for {} names", records.size());
+    }
+
+    @PreDestroy
+    public void sutDown() {
+        executor.shutdown();
     }
 }
