@@ -4,7 +4,7 @@ Challenge to find all the matches from a big files by file URL
 
 Fixed name list used for matching from application.properties file
 
-Could be tested or from StringFinderApplicationTests::loadFromSite
+Could be tested or from StringFinderApplicationTests
 
 Or by PostMan after deployment
 
